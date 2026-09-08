@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { HubConnectionBuilder, HubConnection, LogLevel } from '@microsoft/signalr';
 import type { UserAuth } from './types/chat';
 import AuthForm from './components/AuthForm';
@@ -7,6 +7,18 @@ import Sidebar from './components/Sidebar';
 import ChatArea from './components/ChatArea';
 import Profile from './pages/Profile';
 import { API_BASE_URL } from './api/axiosClient';
+
+// Component bọc bảo vệ Route
+function ProtectedRoute({ user, children }: { user: UserAuth | null; children: React.ReactNode }) {  const location = useLocation();
+
+  if (!user) {
+    // Lưu lại vị trí người dùng đang muốn truy cập vào localStorage
+    localStorage.setItem('redirectAfterLogin', location.pathname);
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
 
 export default function App() {
   const [user, setUser] = useState<UserAuth | null>(null);
@@ -25,14 +37,12 @@ export default function App() {
     }
   }, []);
 
-  // 2. Khởi tạo SignalR HubConnection khi user đã login
+  // 2. Khởi tạo SignalR HubConnection
   useEffect(() => {
     if (!user?.token) {
       setHubConnection(null);
       return;
     }
-
-    console.log('🔵 Creating NEW SignalR connection, token:', user.token.substring(0, 20));  // 👈 add
 
     const connection = new HubConnectionBuilder()
       .withUrl(`${API_BASE_URL}/chatHub`, {
@@ -44,33 +54,13 @@ export default function App() {
 
     connection
       .start()
-      .then(() => {
-        console.log('🟢 Connection started successfully');  // 👈 add
-        setHubConnection(connection);
-      })
+      .then(() => setHubConnection(connection))
       .catch((err) => console.error('Lỗi kết nối SignalR:', err));
 
     return () => {
-      console.log('🔴 Cleanup: stopping connection');  // 👈 add
       connection.stop();
     };
-}, [user?.token]);
-
-  useEffect(() => {
-  if (!hubConnection || !user) return;
-
-  hubConnection.on('AvatarUpdated', (userId: string, avatarUrl: string) => {
-    if (userId === user.userId) {
-      const updated = { ...user, avatarUrl };
-      setUser(updated);
-      localStorage.setItem('user', JSON.stringify(updated));
-    }
-  });
-
-  return () => {
-    hubConnection.off('AvatarUpdated');
-  };
-}, [hubConnection, user]);
+  }, [user?.token]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -78,40 +68,61 @@ export default function App() {
     setActiveGroupId(null);
   };
 
-  if (!user) {
-    return <AuthForm onLoginSuccess={(u) => setUser(u)} />;
-  }
+  const handleLoginSuccess = (u: UserAuth) => {
+    setUser(u);
+    const redirectUrl = localStorage.getItem('redirectAfterLogin');
+    if (redirectUrl) {
+      localStorage.removeItem('redirectAfterLogin');
+      window.location.href = redirectUrl; // Chuyển sang đúng trang profile bạn bè gửi
+    }
+  };
 
   return (
     <BrowserRouter>
       <Routes>
+        <Route
+          path="/login"
+          element={
+            user ? <Navigate to="/" replace /> : <AuthForm onLoginSuccess={handleLoginSuccess} />
+          }
+        />
+
         {/* Route trang nhắn tin chính */}
         <Route
           path="/"
           element={
-            <div className="flex h-screen bg-slate-900 text-slate-100">
-              <Sidebar
-                user={user}
-                onLogout={handleLogout}
-                hubConnection={hubConnection}
-                activeGroupId={activeGroupId} 
-                onSelectGroup={(gid) => setActiveGroupId(gid)}
-              />
-              {activeGroupId ? (
-                <ChatArea groupId={activeGroupId} user={user} />
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
-                  Chọn một người bạn hoặc phòng chat ở danh sách bên trái để bắt đầu nhắn tin nhé!
-                </div>
-              )}
-            </div>
+            <ProtectedRoute user={user}>
+              <div className="flex h-screen bg-slate-900 text-slate-100">
+                <Sidebar
+                  user={user!}
+                  onLogout={handleLogout}
+                  hubConnection={hubConnection}
+                  activeGroupId={activeGroupId}
+                  onSelectGroup={(gid) => setActiveGroupId(gid)}
+                />
+                {activeGroupId ? (
+                  <ChatArea groupId={activeGroupId} user={user!} />
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
+                    Chọn một người bạn hoặc phòng chat ở danh sách bên trái để bắt đầu nhắn tin nhé!
+                  </div>
+                )}
+              </div>
+            </ProtectedRoute>
           }
         />
 
-        {/* Route trang Profile cá nhân/bạn bè */}
-        <Route path="/profile/:userId" element={<Profile onLogout={handleLogout} />} />
+        {/* Route trang Profile */}
+        <Route
+          path="/profile/:userId"
+          element={
+            <ProtectedRoute user={user}>
+              <Profile onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Chuyển hướng các route không tồn tại về trang chủ */}
+        {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
