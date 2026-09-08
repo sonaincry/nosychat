@@ -110,24 +110,30 @@ export default function Sidebar({ user, hubConnection, onSelectGroup, onLogout, 
             });
 
             hubConnection.on("ReceiveMessage", (msg: any) => {
-                console.log('Sidebar received message:', msg);           // 👈 add
-                console.log('Current groups ids:', groups.map(g => g.id));
-                setGroups((prev) =>
-                    prev.map((g) => {
-                        if (g.id !== msg.groupId) return g;
-                        const isOpenNow = activeGroupIdRef.current === msg.groupId; // 👈 use ref, not closure var
-                        const isMine = msg.senderId === user.userId;
-                        return {
-                            ...g,
-                            lastMessageContent: msg.content,
-                            lastMessageType: msg.messageType,
-                            lastMessageAt: msg.createdAt,
-                            lastMessageSenderId: msg.senderId,
-                            unreadCount: (!isMine && !isOpenNow) ? g.unreadCount + 1 : g.unreadCount,
-                        };
-                    })
-                );
-            });
+    setGroups((prev) => {
+        const exists = prev.some((g) => g.id === msg.groupId);
+
+        if (!exists) {
+            // Brand new chat we don't have locally yet — refetch full list to pick it up
+            fetchUserGroups();
+            return prev; 
+        }
+
+        return prev.map((g) => {
+            if (g.id !== msg.groupId) return g;
+            const isOpenNow = activeGroupIdRef.current === msg.groupId;
+            const isMine = msg.senderId === user.userId;
+            return {
+                ...g,
+                lastMessageContent: msg.content,
+                lastMessageType: msg.messageType,
+                lastMessageAt: msg.createdAt,
+                lastMessageSenderId: msg.senderId,
+                unreadCount: (!isMine && !isOpenNow) ? g.unreadCount + 1 : g.unreadCount,
+            };
+        });
+    });
+});
         }
 
         return () => {
