@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HubConnectionBuilder, HubConnection, LogLevel } from '@microsoft/signalr';
 import type { UserAuth } from './types/chat';
 import AuthForm from './components/AuthForm';
@@ -8,24 +8,24 @@ import ChatArea from './components/ChatArea';
 import Profile from './pages/Profile';
 import { API_BASE_URL } from './api/axiosClient';
 
-// Component bọc bảo vệ Route
-function ProtectedRoute({ user, children }: { user: UserAuth | null; children: React.ReactNode }) {  const location = useLocation();
+function ProtectedRoute({ user, children }: { user: UserAuth | null; children: React.ReactNode }) {
+  const location = useLocation();
 
   if (!user) {
-    // Lưu lại vị trí người dùng đang muốn truy cập vào localStorage
     localStorage.setItem('redirectAfterLogin', location.pathname);
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return <>{children}</>;
 }
 
 export default function App() {
   const [user, setUser] = useState<UserAuth | null>(null);
+  const [authLoading, setAuthLoading] = useState(true); // 🟢 State chờ restore token
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [hubConnection, setHubConnection] = useState<HubConnection | null>(null);
 
-  // 1. Restore phiên đăng nhập
+  // 1. Restore phiên đăng nhập từ localStorage
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -35,6 +35,7 @@ export default function App() {
         localStorage.clear();
       }
     }
+    setAuthLoading(false); // 🟢 Đã hoàn tất kiểm tra localStorage
   }, []);
 
   // 2. Khởi tạo SignalR HubConnection
@@ -73,9 +74,18 @@ export default function App() {
     const redirectUrl = localStorage.getItem('redirectAfterLogin');
     if (redirectUrl) {
       localStorage.removeItem('redirectAfterLogin');
-      window.location.href = redirectUrl; // Chuyển sang đúng trang profile bạn bè gửi
+      window.location.href = redirectUrl; // Redirect đúng link profile
     }
   };
+
+  // 🟢 Tránh render Router khi chưa kiểm tra xong trạng thái đăng nhập
+  if (authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-900 text-slate-400">
+        Đang tải...
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>
