@@ -2,25 +2,25 @@
 
 ## Stack
 
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
 
 ## UI Philosophy
 
 Prefer:
 
-- clean
-- modern
-- lightweight
-- consistent UI
+* clean
+* modern
+* lightweight
+* consistent UI
 
 Avoid:
 
-- unnecessary animations
-- excessive colors
-- overly complex layouts
+* unnecessary animations
+* excessive colors
+* overly complex layouts
 
 ## Existing Style
 
@@ -38,7 +38,7 @@ src/api
 
 If backend endpoints change:
 
-- update frontend immediately.
+* update frontend immediately.
 
 ## State
 
@@ -78,8 +78,8 @@ Do not modify deployment configuration.
 
 Do not touch:
 
-- Vercel config
-- deployment settings
+* Vercel config
+* deployment settings
 
 unless explicitly requested.
 
@@ -87,5 +87,19 @@ unless explicitly requested.
 
 Before finishing:
 
-- build only the frontend project
-- lint only modified files
+* build only the frontend project
+* lint only modified files
+
+
+
+## Book Reader
+* 
+* The PDF reader is Canvas-based.
+* 
+* Do not add PDF.js TextLayer unless explicitly requested.
+* 
+* Manual page navigation must not overwrite saved narration progress.
+* 
+* Do not automatically move the user's scroll position within the same page
+* while narration is active.
+

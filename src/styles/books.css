@@ -127,12 +127,27 @@
   .books-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; }
   .book-section-heading { align-items: baseline; }
   .book-section-heading .book-muted { font-size: 11px; }
-  .reader-header { padding: 12px; gap: 10px; }
+  .reader-header { padding: max(8px, env(safe-area-inset-top)) 10px 8px; gap: 8px; }
+  .reader-header .book-icon-button { min-width: 44px; min-height: 44px; }
+  .reader-title h1 { font-size: 14px; }
+  .reader-title p { font-size: 11px; }
   .reader-toolbar { gap: 8px 18px; }
   .reader-footer { padding: 10px 12px; font-size: 11px; }
-  .audio-reader { grid-template-columns: 1fr auto; align-items: center; padding: 12px 48px 12px 12px; gap: 10px; }
+  .reader-turn-page { min-height: 44px; }
+  .audio-reader { grid-template-columns: minmax(0, 1fr) auto; align-items: center; max-height: 42dvh; overflow-x: hidden; overflow-y: auto; padding: 12px 48px max(12px, env(safe-area-inset-bottom)) 12px; gap: 10px; }
   .audio-reader-buttons { justify-self: end; }
+  .audio-reader-primary, .audio-reader-icon { min-height: 44px; }
+  .audio-reader-icon { width: 44px; }
+  .audio-reader-field select { width: 100%; min-height: 44px; font-size: 16px; }
   .audio-reader-field { min-width: 0; }
   .audio-reader-voice { grid-column: 1 / -1; }
-  .audio-reader-close { top: 8px; right: 8px; }
+  .audio-reader-close { top: 6px; right: 6px; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .audio-resume-choice button { min-height: 44px; }
+}
+@media (max-width: 430px) {
+  .audio-reader-status { grid-column: 1 / -1; padding-right: 4px; }
+  .audio-reader-buttons { grid-column: 1 / -1; width: 100%; justify-self: stretch; }
+  .audio-reader-primary { flex: 1; }
+  .audio-reader-error { margin-left: 0; }
+  .reader-viewport { padding-inline: 8px; }
 }

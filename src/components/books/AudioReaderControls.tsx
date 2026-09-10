@@ -79,6 +79,7 @@ export default function AudioReaderControls({
   const vieNeuVoiceIdRef = useRef('');
   const rateRef = useRef(1);
   const vieNeuPlaybackRef = useRef<VieNeuPlayback | null>(null);
+  const browserUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     if (!('speechSynthesis' in window)) return;
@@ -99,6 +100,7 @@ export default function AudioReaderControls({
       window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
       runIdRef.current += 1;
       window.speechSynthesis.cancel();
+      browserUtteranceRef.current = null;
       const playback = vieNeuPlaybackRef.current;
       playback?.controller?.abort();
       playback?.sources.forEach(source => { try { source.stop(); } catch { /* Already stopped. */ } });
@@ -195,7 +197,7 @@ export default function AudioReaderControls({
     vieNeuPlaybackRef.current = null;
   }
 
-  async function playVieNeuSegment(text: string, runId: number) {
+  function unlockVieNeuPlayback() {
     let playback = vieNeuPlaybackRef.current;
     if (!playback || playback.context.state === 'closed') {
       playback = {
@@ -207,9 +209,30 @@ export default function AudioReaderControls({
       vieNeuPlaybackRef.current = playback;
     }
 
+    // Mobile browsers only allow Web Audio to start during a direct tap/click.
+    // Resume and play one silent sample before any API request loses that gesture.
+    if (playback.context.state !== 'running') void playback.context.resume().catch(() => undefined);
+    const silentBuffer = playback.context.createBuffer(1, 1, 48_000);
+    const silentSource = playback.context.createBufferSource();
+    silentSource.buffer = silentBuffer;
+    silentSource.connect(playback.context.destination);
+    silentSource.start();
+  }
+
+  async function playVieNeuSegment(text: string, runId: number) {
+    let playback = vieNeuPlaybackRef.current;
+    if (!playback || playback.context.state === 'closed') {
+      unlockVieNeuPlayback();
+      playback = vieNeuPlaybackRef.current;
+    }
+    if (!playback) throw new Error('Trình duyệt không thể khởi tạo trình phát âm thanh.');
+
     const controller = new AbortController();
     playback.controller = controller;
     await playback.context.resume();
+    if (playback.context.state !== 'running') {
+      throw new Error('Trình duyệt đang chặn âm thanh. Hãy chạm Đọc sách lần nữa.');
+    }
     const stream = await narrationApi.stream({ text, voiceId: vieNeuVoiceIdRef.current || null }, controller.signal);
     const reader = stream.getReader();
     let headerBytesLeft = 44;
@@ -314,6 +337,7 @@ export default function AudioReaderControls({
         const selectedVoice = browserVoices.find(voice => voice.voiceURI === browserVoiceUriRef.current);
         if (selectedVoice) { utterance.voice = selectedVoice; utterance.lang = selectedVoice.lang; }
         utterance.onend = () => {
+          if (browserUtteranceRef.current === utterance) browserUtteranceRef.current = null;
           void (async () => {
             if (runId !== runIdRef.current) return;
             const nextCursor = await findNextCursor(cursor);
@@ -324,9 +348,11 @@ export default function AudioReaderControls({
         };
         utterance.onerror = event => {
           if (runId !== runIdRef.current || event.error === 'canceled' || event.error === 'interrupted') return;
+          if (browserUtteranceRef.current === utterance) browserUtteranceRef.current = null;
           setError('Trình duyệt không thể phát đoạn này. Hãy thử giọng đọc khác.');
           setPlaybackState('error');
         };
+        browserUtteranceRef.current = utterance;
         window.speechSynthesis.speak(utterance);
       }
     } catch (err) {
@@ -358,10 +384,12 @@ export default function AudioReaderControls({
 
     const runId = ++runIdRef.current;
     window.speechSynthesis.cancel();
+    browserUtteranceRef.current = null;
     stopVieNeuPlayback();
     setPlaybackState('preparing');
     setError('');
     try {
+      if (provider === 'vieneu') unlockVieNeuPlayback();
       let structure = await booksApi.structure(bookId);
       if (structure.status !== 'Ready' && structure.status !== 'NoText') {
         structure = await booksApi.prepareStructure(bookId);
@@ -422,11 +450,13 @@ export default function AudioReaderControls({
 
     const runId = ++runIdRef.current;
     window.speechSynthesis.cancel();
+    browserUtteranceRef.current = null;
     stopVieNeuPlayback();
     setResumeChoice(null);
     setPlaybackState('preparing');
     setError('');
     try {
+      if (provider === 'vieneu') unlockVieNeuPlayback();
       if (useVisiblePage) {
         const cursor = await findFirstCursorOnPage(choice.visiblePage);
         if (runId !== runIdRef.current) return;
@@ -451,6 +481,7 @@ export default function AudioReaderControls({
   function stop() {
     runIdRef.current += 1;
     window.speechSynthesis.cancel();
+    browserUtteranceRef.current = null;
     stopVieNeuPlayback();
     cursorRef.current = null;
     setResumeChoice(null);
@@ -468,7 +499,9 @@ export default function AudioReaderControls({
     if (!cursor) return;
     const runId = ++runIdRef.current;
     window.speechSynthesis.cancel();
+    browserUtteranceRef.current = null;
     stopVieNeuPlayback();
+    if (provider === 'vieneu') unlockVieNeuPlayback();
     void speakCursor(cursor, runId);
   }
   function close() { stop(); onClose(); }
