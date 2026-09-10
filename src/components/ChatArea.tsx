@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
 import type { Message, UserAuth } from '../types/chat';
 import axiosClient, { API_BASE_URL } from '../api/axiosClient';
-import { Send, Image, CheckCheck, UserPlus, Trash2, SmilePlus } from 'lucide-react';
+import { Send, Image, CheckCheck, UserPlus, Trash2, SmilePlus, ArrowLeft, MessageCircle } from 'lucide-react';
 import AddMemberModal from './AddMemberModal';
 import Avatar from './Avatar';
 
@@ -16,11 +16,12 @@ interface Props {
   groupId: string;
   groupName?: string;
   user: UserAuth;
+  onBack: () => void;
 }
 
 const REACTION_EMOJIS = ['👍', '😂', '😮', '❤️', '😠', '🖕'];
 
-export default function ChatArea({ groupId, groupName: initialGroupName, user }: Props) {
+export default function ChatArea({ groupId, groupName: initialGroupName, user, onBack }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [hubConnection, setHubConnection] = useState<signalR.HubConnection | null>(null);
@@ -240,7 +241,7 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user }:
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="underline text-blue-300 hover:text-blue-200 break-all"
+          className="underline text-[#bc4653] hover:text-[#8d3440] break-all"
         >
           {url}
         </a>
@@ -252,17 +253,19 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user }:
 }
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-900">
+    <div className="chat-conversation">
       {/* Header Thanh Chat */}
-      <div className="p-4 border-b border-slate-800 font-bold bg-slate-900/50 text-sm flex justify-between items-center">
+      <div className="chat-conversation-header">
         <div className="flex items-center gap-2">
-          <span className="text-white text-base">{displayName}</span>
+          <button type="button" className="chat-mobile-back" onClick={onBack} aria-label="Về danh sách trò chuyện"><ArrowLeft size={20} /></button>
+          <Avatar url={groupDetails?.avatarUrl} name={displayName} size={42} />
+          <div><h1>{displayName}</h1><p className="chat-connection-label">{hubConnection ? 'Sẵn sàng trò chuyện' : 'Đang kết nối…'}</p></div>
         </div>
 
         {isGroupChat && (
           <button
             onClick={handleOpenAddMember}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-semibold transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#fce5dd] text-[#bc4653] hover:bg-[#eb6873] hover:text-[#39372f] rounded-lg text-xs font-semibold transition"
             title="Thêm thành viên"
           >
             <UserPlus size={16} />
@@ -272,7 +275,8 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user }:
       </div>
 
       {/* Danh sách tin nhắn */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="chat-messages flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.length === 0 && <div className="chat-first-message"><MessageCircle size={30} /><p>Gửi một lời chào để bắt đầu câu chuyện.</p></div>}
         {messages.map((msg) => {
           const isMe = msg.senderId === user.userId;
           const isPickerOpen = openPickerMsgId === msg.id;
@@ -284,17 +288,17 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user }:
 
                 <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                   {!isMe && (
-                    <span className="text-[10px] text-slate-400 mb-1 px-1">{msg.senderName}</span>
+                    <span className="text-[10px] text-[#827b6e] mb-1 px-1">{msg.senderName}</span>
                   )}
 
                   <div className={`relative flex items-center gap-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                     <div
                       className={`p-3 rounded-2xl text-sm ${
-                        isMe ? 'bg-blue-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-200 rounded-bl-none'
+                        isMe ? 'chat-bubble-mine rounded-br-none' : 'chat-bubble-other rounded-bl-none'
                       }`}
                     >
                       {msg.isDeleted ? (
-                        <p className="italic text-slate-400 text-xs">Tin nhắn đã bị xoá</p>
+                        <p className="italic text-[#827b6e] text-xs">Tin nhắn đã bị xoá</p>
                       ) : msg.messageType === 'Image' ? (
                         <img src={msg.mediaUrl!} alt="Attachment" className="rounded-lg max-h-60 object-cover" />
                       ) : (
@@ -304,10 +308,10 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user }:
 
                     {/* Action buttons: react + delete, only visible on hover */}
                     {!msg.isDeleted && (
-                      <div className={`flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`chat-message-actions flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                         <button
                           onClick={() => setOpenPickerMsgId(isPickerOpen ? null : msg.id)}
-                          className="text-slate-500 hover:text-yellow-400 p-1.5 rounded-full hover:bg-slate-800"
+                          className="text-[#827b6e] hover:text-yellow-400 p-1.5 rounded-full hover:bg-white"
                           title="Thả cảm xúc"
                         >
                           <SmilePlus size={16} />
@@ -320,7 +324,7 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user }:
                                 hubConnection?.invoke('DeleteMessage', msg.id, groupId).catch(() => {});
                               }
                             }}
-                            className="text-slate-500 hover:text-red-400 p-1.5 rounded-full hover:bg-slate-800"
+                            className="text-[#827b6e] hover:text-red-400 p-1.5 rounded-full hover:bg-white"
                             title="Xoá tin nhắn"
                           >
                             <Trash2 size={16} />
@@ -333,7 +337,7 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user }:
                     {isPickerOpen && (
                       <div
                         ref={pickerRef}
-                        className={`absolute -top-12 z-20 bg-slate-800 border border-slate-700 rounded-full px-2 py-1.5 flex gap-1 shadow-xl ${
+                        className={`absolute -top-12 z-20 bg-white border border-[#e1dccf] rounded-full px-2 py-1.5 flex gap-1 shadow-xl ${
                           isMe ? 'right-0' : 'left-0'
                         }`}
                       >
@@ -360,19 +364,19 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user }:
                       ).map(([emoji, count]) => (
                         <span
                           key={emoji}
-                          className="text-[11px] bg-slate-800 text-slate-300 border border-slate-700/60 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm"
+                          className="text-[11px] bg-white text-[#615d53] border border-[#e1dccf] rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm"
                         >
                           <span>{emoji}</span>
-                          {count > 1 && <span className="font-semibold text-slate-400 text-[10px]">{count}</span>}
+                          {count > 1 && <span className="font-semibold text-[#827b6e] text-[10px]">{count}</span>}
                         </span>
                       ))}
                     </div>
                   )}
 
-                  <div className="flex items-center space-x-1 mt-1 text-[10px] text-slate-500 px-1">
+                  <div className="flex items-center space-x-1 mt-1 text-[10px] text-[#827b6e] px-1">
                     <span>{formatTimeVN(msg.createdAt)}</span>
                     {isMe && (
-                      <CheckCheck size={14} className={msg.readByUserIds.length > 1 ? 'text-blue-400' : 'text-slate-600'} />
+                      <CheckCheck size={14} className={msg.readByUserIds.length > 1 ? 'text-[#bc4653]' : 'text-[#827b6e]'} />
                     )}
                   </div>
                 </div>
@@ -384,14 +388,14 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user }:
       </div>
 
       {typingUser && (
-        <p className="text-xs text-slate-500 px-4 pb-1 italic">{typingUser}</p>
+        <p className="text-xs text-[#827b6e] px-4 pb-1 italic">{typingUser}</p>
       )}
 
       {/* Ô nhập tin nhắn */}
-      <form onSubmit={handleSend} className="p-4 border-t border-slate-800 flex items-center space-x-2">
-        <label className="p-2 hover:bg-slate-800 rounded-lg cursor-pointer text-slate-400">
+      <form onSubmit={handleSend} className="chat-composer">
+        <label title="Gửi ảnh" className="p-2 hover:bg-white rounded-lg cursor-pointer text-[#827b6e]">
           <Image size={20} />
-          <input type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+          <input type="file" accept="image/*" onChange={handleUpload} className="hidden" aria-label="Gửi ảnh" />
         </label>
         <textarea
           value={inputText}
@@ -404,9 +408,10 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user }:
           }}
           rows={1}
           placeholder="Nhập tin nhắn..."
-          className="flex-1 p-3 bg-slate-800 rounded-xl outline-none text-sm focus:ring-1 focus:ring-blue-500 text-white resize-none"
+          aria-label="Nội dung tin nhắn"
+          className="flex-1 p-3 bg-white rounded-xl outline-none text-sm focus:ring-1 focus:ring-[#eb6873] text-[#39372f] resize-none"
         />
-        <button type="submit" className="p-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-white">
+        <button type="submit" disabled={!inputText.trim() || !hubConnection} aria-label="Gửi tin nhắn" className="chat-send-button">
           <Send size={18} />
         </button>
       </form>

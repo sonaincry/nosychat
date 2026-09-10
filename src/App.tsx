@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HubConnectionBuilder, HubConnection, LogLevel } from '@microsoft/signalr';
 import type { UserAuth } from './types/chat';
@@ -7,6 +7,13 @@ import Sidebar from './components/Sidebar';
 import ChatArea from './components/ChatArea';
 import Profile from './pages/Profile';
 import { API_BASE_URL } from './api/axiosClient';
+import { BookOpen, Gamepad2, MessageCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import './styles/chat.css';
+
+const Books = lazy(() => import('./pages/Books'));
+const BookReader = lazy(() => import('./pages/BookReader'));
+const PartyMatch = lazy(() => import('./pages/PartyMatch'));
 
 function ProtectedRoute({ user, children }: { user: UserAuth | null; children: React.ReactNode }) {
   const location = useLocation();
@@ -89,6 +96,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <Suspense fallback={<div className="p-8 text-center">Đang tải…</div>}>
       <Routes>
         <Route
           path="/login"
@@ -102,7 +110,7 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute user={user}>
-              <div className="flex h-screen bg-slate-900 text-slate-100">
+              <div className={`chat-shell ${activeGroupId ? 'chat-has-selection' : ''}`}><div className="chat-window">
                 <Sidebar
                   user={user!}
                   onLogout={handleLogout}
@@ -111,13 +119,17 @@ export default function App() {
                   onSelectGroup={(gid) => setActiveGroupId(gid)}
                 />
                 {activeGroupId ? (
-                  <ChatArea groupId={activeGroupId} user={user!} />
+                  <ChatArea key={activeGroupId} groupId={activeGroupId} user={user!} onBack={() => setActiveGroupId(null)} />
                 ) : (
-                  <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
-                    Chọn một người bạn hoặc phòng chat ở danh sách bên trái để bắt đầu nhắn tin nhé!
+                  <div className="chat-welcome">
+                    <div className="chat-welcome-icon"><MessageCircle size={44} /></div>
+                    <p className="chat-eyebrow">MỘT GÓC NHỎ ĐỂ KẾT NỐI</p>
+                    <h1>Câu chuyện hay bắt đầu<br />từ một lời chào.</h1>
+                    <p>Chọn một người bạn để trò chuyện, chia sẻ một ngày<br />hoặc kể về cuốn sách bạn vừa đọc.</p>
+                    <div className="chat-welcome-links"><Link className="chat-library-link" to="/books"><BookOpen size={18} /> Khám phá thư viện</Link><Link className="chat-library-link" to="/parties"><Gamepad2 size={18} /> Tìm đồng đội</Link></div>
                   </div>
                 )}
-              </div>
+              </div></div>
             </ProtectedRoute>
           }
         />
@@ -133,8 +145,12 @@ export default function App() {
         />
 
         {/* Catch-all route */}
+        <Route path="/books" element={<ProtectedRoute user={user}><Books user={user!} /></ProtectedRoute>} />
+        <Route path="/books/:bookId" element={<ProtectedRoute user={user}><BookReader user={user!} /></ProtectedRoute>} />
+        <Route path="/parties" element={<ProtectedRoute user={user}><PartyMatch user={user!} hubConnection={hubConnection} /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

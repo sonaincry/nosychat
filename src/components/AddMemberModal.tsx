@@ -69,26 +69,26 @@ export default function AddMemberModal({ groupId, friends, onClose, onMemberAdde
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <UserPlus size={20} className="text-blue-500" /> Thêm thành viên vào nhóm
+            <div className="bg-[#f7f4eb] border border-[#e1dccf] rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+                <div className="flex justify-between items-center border-b border-[#e1dccf] pb-3">
+                    <h3 className="text-lg font-bold text-[#39372f] flex items-center gap-2">
+                        <UserPlus size={20} className="text-[#bb5660]" /> Thêm thành viên vào nhóm
                     </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white">
+                    <button onClick={onClose} className="text-[#827b6e] hover:text-[#39372f]">
                         <X size={20} />
                     </button>
                 </div>
 
                 <div>
-                    <label className="text-xs font-semibold text-slate-400 block mb-2">
+                    <label className="text-xs font-semibold text-[#827b6e] block mb-2">
                         CHỌN BẠN BÈ ({selectedUserIds.length})
                     </label>
 
                     <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
                         {fetchingMembers ? (
-                            <p className="text-xs text-slate-400 italic p-2 text-center">Đang tải thành viên...</p>
+                            <p className="text-xs text-[#827b6e] italic p-2 text-center">Đang tải thành viên...</p>
                         ) : availableFriends.length === 0 ? (
-                            <p className="text-xs text-slate-500 italic p-2 text-center">
+                            <p className="text-xs text-[#827b6e] italic p-2 text-center">
                                 Tất cả bạn bè của bạn đều đã ở trong nhóm này hoặc bạn chưa có bạn bè.
                             </p>
                         ) : (
@@ -100,8 +100,8 @@ export default function AddMemberModal({ groupId, friends, onClose, onMemberAdde
                                         onClick={() => toggleSelectUser(f.userId)}
                                         className={`p-2.5 rounded-xl cursor-pointer flex items-center justify-between border transition ${
                                             isSelected
-                                                ? 'bg-blue-600/20 border-blue-500 text-white'
-                                                : 'bg-slate-800/40 border-transparent text-slate-300 hover:bg-slate-800'
+                                                ? 'bg-[#fce5dd] border-[#d98688] text-[#39372f]'
+                                                : 'bg-white/40 border-transparent text-[#615d53] hover:bg-white'
                                         }`}
                                     >
                                         <span className="text-sm font-medium">{f.displayName || f.username}</span>
@@ -109,7 +109,7 @@ export default function AddMemberModal({ groupId, friends, onClose, onMemberAdde
                                             type="checkbox"
                                             checked={isSelected}
                                             readOnly
-                                            className="accent-blue-600 rounded"
+                                            className="accent-[#d98688] rounded"
                                         />
                                     </div>
                                 );
@@ -118,17 +118,17 @@ export default function AddMemberModal({ groupId, friends, onClose, onMemberAdde
                     </div>
                 </div>
 
-                <div className="flex gap-2 pt-2 border-t border-slate-800">
+                <div className="flex gap-2 pt-2 border-t border-[#e1dccf]">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold transition"
+                        className="flex-1 py-2.5 bg-white hover:bg-[#e3d9c7] text-[#615d53] rounded-xl text-sm font-semibold transition"
                     >
                         Hủy
                     </button>
                     <button
                         disabled={loading || selectedUserIds.length === 0}
                         onClick={handleAddMembers}
-                        className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition disabled:opacity-50"
+                        className="flex-1 py-2.5 bg-[#eb6873] hover:bg-[#d95865] text-white rounded-xl text-sm font-semibold transition disabled:opacity-50"
                     >
                         {loading ? 'Đang thêm...' : 'Xác nhận'}
                     </button>

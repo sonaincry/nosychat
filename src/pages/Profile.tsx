@@ -1,18 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
+import { getProfile, profileError } from '../api/profile';
+import type { ProfileData } from '../api/profile';
 import { UserPlus, Check, MessageSquare, Clock, Copy, KeyRound, ArrowLeft, LogOut } from 'lucide-react';
 import { useRef } from 'react';
 
-interface ProfileData {
-  userId: string;
-  displayName: string;
-  username: string;
-  avatarUrl: string | null;
-  isSelf: boolean;
-  friendStatus: 'None' | 'PendingSent' | 'PendingReceived' | 'Accepted';
-  friendshipId?: string;
-}
 
 interface ProfileProps {
   onLogout?: () => void;
@@ -26,6 +19,8 @@ export default function Profile({ onLogout }: ProfileProps) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<ReturnType<typeof profileError> | null>(null);
+  const requestVersion = useRef(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 const [uploading, setUploading] = useState(false);
@@ -63,18 +58,21 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (userId) {
       fetchProfile();
     }
+    return () => { requestVersion.current += 1; };
   }, [userId]);
 
   const fetchProfile = async () => {
+    const version = ++requestVersion.current;
     setLoading(true);
+    setError(null);
     try {
-      const res = await axiosClient.get(`/Friend/profile/${userId}`);
-      setProfile(res.data);
+      const result = await getProfile(userId!);
+      if (version === requestVersion.current) setProfile(result);
     } catch (err) {
       console.error('Lỗi lấy thông tin Profile:', err);
-      setProfile(null);
+      if (version === requestVersion.current) { setProfile(null); setError(profileError(err)); }
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
   };
 
@@ -121,41 +119,42 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) return <div className="p-8 text-white text-center">Đang tải Trang cá nhân...</div>;
+  if (loading) return <div className="min-h-screen bg-[#f3f0e5] p-8 text-[#706859] text-center">Đang tải trang cá nhân…</div>;
 
   // XỬ LÝ KHI USER KHÔNG TỒN TẠI (VD: Vừa Drop DB)
   if (!profile) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-md w-full text-center space-y-6 shadow-xl">
-          <h2 className="text-xl font-bold text-red-400">Tài khoản không tồn tại!</h2>
-          <p className="text-slate-400 text-sm">
-            Dữ liệu tài khoản này không còn trong hệ thống (hoặc cơ sở dữ liệu đã được làm mới).
+      <div className="min-h-screen bg-[#ffa571] text-[#39372f] flex items-center justify-center p-4">
+        <div className="bg-[#f3f0e5] border border-[#e1dccf] rounded-2xl p-8 max-w-md w-full text-center space-y-6 shadow-xl">
+          <h2 className="text-xl font-bold text-red-400">{error?.title || 'Chưa tải được trang cá nhân'}</h2>
+          <p className="text-[#817664] text-sm">
+            {error?.message || 'Vui lòng thử lại.'}
           </p>
           <button
-            onClick={handleLogout}
+            onClick={error?.loginRequired ? handleLogout : fetchProfile}
             className="w-full py-3 bg-red-600 hover:bg-red-500 font-semibold rounded-xl flex items-center justify-center space-x-2 transition"
           >
             <LogOut size={18} />
-            <span>Đăng xuất & Tạo tài khoản mới</span>
+            <span>{error?.loginRequired ? 'Đăng nhập lại' : 'Thử lại'}</span>
           </button>
+          <button onClick={() => navigate('/')} className="text-sm underline">Về trang chat</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-[#ffa571] text-[#39372f] flex items-center justify-center p-4 relative">
       {/* Nút quay lại Chat */}
       <button
         onClick={() => navigate('/')}
-        className="absolute top-6 left-6 flex items-center space-x-2 text-slate-400 hover:text-white transition"
+        className="absolute top-6 left-6 flex items-center space-x-2 text-[#817664] hover:text-white transition"
       >
         <ArrowLeft size={20} />
         <span>Quay lại trang chat</span>
       </button>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-md w-full text-center space-y-6 shadow-xl">
+      <div className="bg-[#f3f0e5] border border-[#e1dccf] rounded-2xl p-8 max-w-md w-full text-center space-y-6 shadow-xl">
         <div
   onClick={handleAvatarClick}
   className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center text-3xl font-bold uppercase shadow-lg overflow-hidden relative ${
@@ -166,7 +165,7 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
   {profile.avatarUrl ? (
     <img src={profile.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
   ) : (
-    <div className="w-full h-full bg-blue-600 flex items-center justify-center">
+    <div className="w-full h-full bg-[#dc6d76] flex items-center justify-center">
       {profile.displayName ? profile.displayName.charAt(0) : 'U'}
     </div>
   )}
@@ -190,24 +189,24 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
         <div>
           <h2 className="text-2xl font-bold">{profile.displayName}</h2>
-          <p className="text-slate-400 text-sm">@{profile.username}</p>
+          <p className="text-[#817664] text-sm">@{profile.username}</p>
         </div>
 
         <button
           onClick={copyProfileLink}
-          className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl flex items-center justify-center space-x-2 text-xs transition"
+          className="w-full py-2 bg-[#ebe5d9] hover:bg-[#e3d9c7] text-[#6e6557] rounded-xl flex items-center justify-center space-x-2 text-xs transition"
         >
           <Copy size={14} />
           <span>{copied ? 'Đã chép link Trang cá nhân!' : 'Sao chép link Trang cá nhân'}</span>
         </button>
 
-        <div className="pt-4 border-t border-slate-800">
+        <div className="pt-4 border-t border-[#e1dccf]">
           {/* TRƯỜNG HỢP 1: LÀ CHÍNH BẢN THÂN MÌNH */}
           {profile.isSelf ? (
             <div className="space-y-3">
               <button
                 onClick={() => alert('Tính năng Thay đổi mật khẩu đéo có, đợi đi')}
-                className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl flex items-center justify-center space-x-2 transition border border-slate-700"
+                className="w-full py-3 bg-[#ebe5d9] hover:bg-[#e3d9c7] text-[#514a3f] font-semibold rounded-xl flex items-center justify-center space-x-2 transition border border-[#e1dccf]"
               >
                 <KeyRound size={18} />
                 <span>Thay đổi mật khẩu</span>
@@ -227,7 +226,7 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
               {profile.friendStatus === 'None' && (
                 <button
                   onClick={handleSendRequest}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 font-semibold rounded-xl flex items-center justify-center space-x-2 transition"
+                  className="w-full py-3 bg-[#dc6d76] hover:bg-[#c65764] font-semibold rounded-xl flex items-center justify-center space-x-2 transition"
                 >
                   <UserPlus size={18} />
                   <span>Kết bạn</span>
@@ -235,7 +234,7 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
               )}
 
               {profile.friendStatus === 'PendingSent' && (
-                <button disabled className="w-full py-3 bg-slate-800 text-slate-400 font-semibold rounded-xl flex items-center justify-center space-x-2">
+                <button disabled className="w-full py-3 bg-[#ebe5d9] text-[#817664] font-semibold rounded-xl flex items-center justify-center space-x-2">
                   <Clock size={18} />
                   <span>Đã gửi lời mời</span>
                 </button>
@@ -254,7 +253,7 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
               {profile.friendStatus === 'Accepted' && (
                 <button
                   onClick={handleStartChat}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 font-semibold rounded-xl flex items-center justify-center space-x-2 transition"
+                  className="w-full py-3 bg-[#dc6d76] hover:bg-[#c65764] font-semibold rounded-xl flex items-center justify-center space-x-2 transition"
                 >
                   <MessageSquare size={18} />
                   <span>Nhắn tin ngay</span>
