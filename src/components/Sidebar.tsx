@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axiosClient from '../api/axiosClient';
 import type { UserAuth } from '../types/chat';
-import { MessageSquare, LogOut, User, UserCheck, Users, BookOpen, Search, Plus, Gamepad2 } from 'lucide-react';
+import { MessageSquare, LogOut, User, UserCheck, Users, BookOpen, Search, Plus, Gamepad2, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { HubConnection } from '@microsoft/signalr';
 import CreateGroupModal from './CreateGroupModal';
@@ -196,7 +196,7 @@ export default function Sidebar({ user, hubConnection, onSelectGroup, onLogout, 
                 <span><strong>{user.displayName || user.username}</strong><small>@{user.username}</small></span>
                 <User size={18} />
             </button>
-            <nav className="chat-tabs" aria-label="Không gian"><span className="selected"><MessageSquare size={17} /> Chat</span><button onClick={() => navigate('/books')}><BookOpen size={17} /> Sách</button><button onClick={() => navigate('/parties')}><Gamepad2 size={17} /> Party</button></nav>
+            <nav className="chat-tabs" aria-label="Không gian"><span className="selected"><MessageSquare size={17} /> Chat</span><button onClick={() => navigate('/books')}><BookOpen size={17} /> Sách</button><button onClick={() => navigate('/parties')}><Gamepad2 size={17} /> Party</button>{user.username.toLowerCase() === 'admin' && <button onClick={() => navigate('/admin')}><ShieldCheck size={17} /> Admin</button>}</nav>
             <label className="chat-search"><Search size={17} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Tìm bạn bè, nhóm…" aria-label="Tìm bạn bè, nhóm" /></label>
             <div className="chat-sidebar-list">
                 {pendingRequests.length > 0 && <section><h2 className="chat-list-heading">Lời mời kết bạn <span>{pendingRequests.length}</span></h2>

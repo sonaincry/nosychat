@@ -2,7 +2,10 @@ export interface Game {
   id: string;
   name: string;
   partySizes: number[];
+  modes: GameMode[];
 }
+
+export interface GameMode { id: string; name: string; }
 
 export interface PlayerGame {
   gameId: string;
@@ -15,6 +18,7 @@ export interface PlayerGame {
   bio: string | null;
   photoUrls: string[];
   preferredPlayTime: string | null;
+  modes: GameMode[];
 }
 
 export interface PartyMember {
@@ -78,6 +82,7 @@ export interface SwipeProfile {
   language: string;
   voiceChatAvailable: boolean;
   preferredPlayTime: string | null;
+  modes: GameMode[];
 }
 
 export interface SwipeResult {

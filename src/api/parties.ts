@@ -4,10 +4,13 @@ import type { Game, Party, PartyFilters, PartyNotification, PlayerGame, SwipePro
 
 export const partiesApi = {
   games: () => axiosClient.get<Game[]>('/Party/games').then(response => response.data),
-  createGame: (name: string, partySizes: number[]) =>
-    axiosClient.post<Game>('/Party/games', { name, partySizes }).then(response => response.data),
+  createGame: (name: string, partySizes: number[], modes: string[]) =>
+    axiosClient.post<Game>('/Party/games', { name, partySizes, modes }).then(response => response.data),
+  updateGame: (gameId: string, name: string, partySizes: number[], modes: string[]) =>
+    axiosClient.put<Game>(`/Party/games/${gameId}`, { name, partySizes, modes }).then(response => response.data),
+  deleteGame: (gameId: string) => axiosClient.delete(`/Party/games/${gameId}`),
   playerGames: () => axiosClient.get<PlayerGame[]>('/Party/profile/games').then(response => response.data),
-  savePlayerGame: (data: Omit<PlayerGame, 'gameName'>) =>
+  savePlayerGame: (data: Omit<PlayerGame, 'gameName' | 'modes'> & { modeIds: string[] }) =>
     axiosClient.put<PlayerGame>('/Party/profile/games', data).then(response => response.data),
   browse: (filters: PartyFilters) =>
     axiosClient.get<Party[]>('/Party', { params: filters }).then(response => response.data),
@@ -42,6 +45,7 @@ export const partiesApi = {
 export function partyError(error: unknown): string {
   if (axios.isAxiosError(error)) {
     if (typeof error.response?.data === 'string') return error.response.data;
+    if (error.response?.data?.detail) return error.response.data.detail;
     if (error.response?.data?.title) return error.response.data.title;
   }
   return 'Không thể hoàn tất yêu cầu. Vui lòng thử lại.';

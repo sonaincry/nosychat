@@ -14,6 +14,7 @@ import './styles/chat.css';
 const Books = lazy(() => import('./pages/Books'));
 const BookReader = lazy(() => import('./pages/BookReader'));
 const PartyMatch = lazy(() => import('./pages/PartyMatch'));
+const AdminManagement = lazy(() => import('./pages/AdminManagement'));
 
 function ProtectedRoute({ user, children }: { user: UserAuth | null; children: React.ReactNode }) {
   const location = useLocation();
@@ -157,6 +158,7 @@ export default function App() {
         <Route path="/books" element={<ProtectedRoute user={user}><Books user={user!} /></ProtectedRoute>} />
         <Route path="/books/:bookId" element={<ProtectedRoute user={user}><BookReader user={user!} /></ProtectedRoute>} />
         <Route path="/parties" element={<ProtectedRoute user={user}><PartyMatch user={user!} hubConnection={hubConnection} /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute user={user}><AdminManagement user={user!} /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>

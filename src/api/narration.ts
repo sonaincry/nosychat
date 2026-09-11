@@ -15,6 +15,16 @@ export const narrationApi = {
   voices: async (signal?: AbortSignal) =>
     (await api.get<NarratorVoice[]>('/narration/vieneu/voices', { signal })).data,
 
+  addVoice: async (name: string, audio: File) => {
+    const form = new FormData();
+    form.append('name', name);
+    form.append('audio', audio);
+    return (await api.post<NarratorVoice>('/narration/vieneu/voices', form)).data;
+  },
+
+  deleteVoice: async (voiceId: string) =>
+    api.delete(`/narration/vieneu/voices/${encodeURIComponent(voiceId)}`),
+
   stream: async (request: SynthesizeNarrationRequest, signal: AbortSignal) => {
     const token = bearerToken();
     const response = await fetch(`${API_BASE_URL}/api/narration/vieneu/stream`, {
