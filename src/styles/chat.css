@@ -60,8 +60,35 @@
 .chat-bubble-mine { background: #efc6b7; color: #674437; box-shadow: 0 3px 8px #bb917519; }
 .chat-bubble-other { background: #fffdf8; border: 1px solid #e9e2d6; color: #524c41; box-shadow: 0 3px 8px #bb917510; }
 .chat-first-message { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 48px 16px; color: #aa9c87; font-size: 12px; }
-.chat-composer { display: flex; align-items: center; gap: 12px; padding: 18px 24px; margin: 0 20px 20px; background: #fffdf8; border: 1px solid #e7decf; border-radius: 16px; }
+.chat-composer { position: relative; display: flex; align-items: center; gap: 12px; padding: 18px 24px; margin: 0 20px 20px; background: #fffdf8; border: 1px solid #e7decf; border-radius: 16px; }
 .chat-composer textarea { background: transparent; min-width: 0; }
+.chat-giphy-control { position: relative; flex-shrink: 0; }
+.chat-giphy-button { min-width: 38px; min-height: 36px; padding: 7px 6px; color: #827b6e; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: -.02em; }
+.chat-giphy-button:hover { background: white; }
+.giphy-picker { position: absolute; z-index: 30; left: -48px; bottom: calc(100% + 14px); width: min(360px, calc(100vw - 32px)); height: min(470px, 62dvh); display: flex; flex-direction: column; padding: 12px; background: #fffdf8; border: 1px solid #e1dccf; border-radius: 16px; box-shadow: 0 14px 36px #5c493438; }
+.giphy-picker-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.giphy-picker-tabs { display: flex; gap: 5px; padding: 3px; background: #eee8dc; border-radius: 10px; }
+.giphy-picker-tabs button { min-height: 34px; padding: 6px 16px; color: #847867; border-radius: 8px; font-size: 12px; font-weight: 650; }
+.giphy-picker-tabs button.active { background: #fffdf8; color: #b84651; box-shadow: 0 1px 4px #66523b1a; }
+.giphy-picker-close { display: grid; place-items: center; width: 38px; height: 38px; color: #8b8172; border-radius: 50%; }
+.giphy-picker-close:hover { background: #eee8dc; }
+.giphy-search { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 9px 11px; color: #978b78; background: #eeeae0; border-radius: 9px; }
+.giphy-search:focus-within { outline: 2px solid #e8a89e; }
+.giphy-search input { width: 100%; min-width: 0; background: transparent; outline: 0; font-size: 13px; }
+.giphy-picker-caption { margin: 10px 2px 7px; color: #918674; font-size: 10px; font-weight: 650; }
+.giphy-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 96px; gap: 6px; overflow-y: auto; overscroll-behavior: contain; }
+.giphy-grid button { min-width: 0; overflow: hidden; border-radius: 9px; background: #eee8dc; }
+.giphy-grid button:disabled { opacity: .55; }
+.giphy-grid img { width: 100%; height: 100%; object-fit: cover; }
+.giphy-grid.stickers button { background: transparent; }
+.giphy-grid.stickers img { object-fit: contain; }
+.giphy-picker-state { flex: 1; display: grid; place-items: center; padding: 24px; color: #8d8170; text-align: center; font-size: 12px; }
+.giphy-picker-state.error { color: #b84651; }
+.giphy-picker-state code { font-size: 11px; }
+.giphy-send-error { margin-top: 6px; color: #b84651; text-align: center; font-size: 10px; }
+.giphy-attribution { align-self: flex-end; margin-top: 7px; color: #8d8170; font-size: 9px; font-weight: 700; }
+.chat-sticker-bubble { padding: 2px 4px; }
+.chat-sticker { display: block; width: auto; max-width: min(180px, 48vw); height: auto; max-height: 180px; object-fit: contain; filter: drop-shadow(0 3px 3px #3d2f231f); }
 .chat-send-button { background: #df6974; color: white; border-radius: 11px; padding: 12px; transition: background .2s; }
 .chat-send-button:hover { background: #c65360; }
 .chat-send-button:disabled { opacity: .4; cursor: not-allowed; }
@@ -78,5 +105,7 @@
   .chat-messages { padding: 18px 12px; }
   .chat-message-actions { opacity: 1; }
   .chat-composer { margin: 0 10px 12px; padding: 10px; gap: 4px; }
+  .chat-giphy-button { min-width: 44px; min-height: 44px; }
+  .giphy-picker { position: fixed; left: 10px; right: 10px; bottom: calc(76px + env(safe-area-inset-bottom)); width: auto; height: min(480px, 58dvh); }
   .chat-contact { padding: 14px 10px; }
 }

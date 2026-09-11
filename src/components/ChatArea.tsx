@@ -5,6 +5,8 @@ import axiosClient, { API_BASE_URL } from '../api/axiosClient';
 import { Send, Image, CheckCheck, UserPlus, Trash2, SmilePlus, ArrowLeft, MessageCircle } from 'lucide-react';
 import AddMemberModal from './AddMemberModal';
 import Avatar from './Avatar';
+import GiphyPicker from './GiphyPicker';
+import type { GiphyMediaItem, GiphyMediaType } from '../api/giphy';
 
 interface Friend {
   userId: string;
@@ -30,10 +32,13 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
   const [friends, setFriends] = useState<Friend[]>([]);
   const [typingUser, setTypingUser] = useState<string | null>(null);
   const [openPickerMsgId, setOpenPickerMsgId] = useState<string | null>(null);
+  const [showGiphyPicker, setShowGiphyPicker] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const mediaPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchGroupAndMessages = async () => {
@@ -58,6 +63,9 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
     const handleClickOutside = (e: MouseEvent) => {
       if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
         setOpenPickerMsgId(null);
+      }
+      if (mediaPickerRef.current && !mediaPickerRef.current.contains(e.target as Node)) {
+        setShowGiphyPicker(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -180,13 +188,17 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
     }, 2000);
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !hubConnection) return;
+  const uploadImage = async (file: File) => {
+    if (!hubConnection || uploadingImage) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn một file ảnh hoặc GIF.');
+      return;
+    }
 
     const formData = new FormData();
     formData.append('file', file);
 
+    setUploadingImage(true);
     try {
       const res = await axiosClient.post('/Chat/upload-image', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -198,9 +210,35 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
         messageType: 'Image',
         mediaUrl: res.data.url,
       });
-    } catch (err) {
+    } catch {
       alert('Upload ảnh thất bại!');
+    } finally {
+      setUploadingImage(false);
     }
+  };
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) void uploadImage(file);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const imageItem = Array.from(e.clipboardData.items).find(item => item.type.startsWith('image/'));
+    const file = imageItem?.getAsFile();
+    if (!file) return;
+    e.preventDefault();
+    void uploadImage(file);
+  };
+
+  const handleSendGiphy = async (item: GiphyMediaItem, type: GiphyMediaType) => {
+    if (!hubConnection) return;
+    await hubConnection.invoke('SendMessage', {
+      groupId,
+      content: item.title,
+      messageType: type,
+      mediaUrl: item.mediaUrl,
+    });
   };
 
   const handleReact = (messageId: string, emoji: string) => {
@@ -292,15 +330,16 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
                   )}
 
                   <div className={`relative flex items-center gap-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div
-                      className={`p-3 rounded-2xl text-sm ${
-                        isMe ? 'chat-bubble-mine rounded-br-none' : 'chat-bubble-other rounded-bl-none'
-                      }`}
+                    <div className={msg.messageType === 'Sticker' && !msg.isDeleted
+                      ? 'chat-sticker-bubble'
+                      : `p-3 rounded-2xl text-sm ${isMe ? 'chat-bubble-mine rounded-br-none' : 'chat-bubble-other rounded-bl-none'}`}
                     >
                       {msg.isDeleted ? (
                         <p className="italic text-[#827b6e] text-xs">Tin nhắn đã bị xoá</p>
-                      ) : msg.messageType === 'Image' ? (
-                        <img src={msg.mediaUrl!} alt="Attachment" className="rounded-lg max-h-60 object-cover" />
+                      ) : msg.messageType === 'Sticker' ? (
+                        <img src={msg.mediaUrl!} alt={msg.content || 'Sticker'} className="chat-sticker" loading="lazy" />
+                      ) : msg.messageType === 'Image' || msg.messageType === 'Gif' ? (
+                        <img src={msg.mediaUrl!} alt={msg.content || (msg.messageType === 'Gif' ? 'GIF' : 'Attachment')} className="rounded-lg max-h-60 object-cover" loading="lazy" />
                       ) : (
                         <p className="whitespace-pre-wrap break-words">{linkify(msg.content || '')}</p>
                       )}
@@ -393,21 +432,26 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
 
       {/* Ô nhập tin nhắn */}
       <form onSubmit={handleSend} className="chat-composer">
-        <label title="Gửi ảnh" className="p-2 hover:bg-white rounded-lg cursor-pointer text-[#827b6e]">
+        <label title="Gửi ảnh" className={`p-2 hover:bg-white rounded-lg cursor-pointer text-[#827b6e] ${uploadingImage ? 'opacity-40 pointer-events-none' : ''}`}>
           <Image size={20} />
-          <input type="file" accept="image/*" onChange={handleUpload} className="hidden" aria-label="Gửi ảnh" />
+          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleUpload} disabled={uploadingImage} className="hidden" aria-label="Gửi ảnh" />
         </label>
+        <div ref={mediaPickerRef} className="chat-giphy-control">
+          <button type="button" onClick={() => setShowGiphyPicker(value => !value)} className="chat-giphy-button" aria-label="Gửi GIF hoặc sticker" aria-expanded={showGiphyPicker}>GIF</button>
+          {showGiphyPicker && <GiphyPicker onClose={() => setShowGiphyPicker(false)} onSelect={handleSendGiphy} />}
+        </div>
         <textarea
           value={inputText}
           onChange={handleInputChange}
+          onPaste={handlePaste}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              handleSend(e as any);
+              handleSend(e as unknown as React.FormEvent<HTMLFormElement>);
             }
           }}
           rows={1}
-          placeholder="Nhập tin nhắn..."
+          placeholder={uploadingImage ? 'Đang gửi ảnh…' : 'Nhập tin nhắn...'}
           aria-label="Nội dung tin nhắn"
           className="flex-1 p-3 bg-white rounded-xl outline-none text-sm focus:ring-1 focus:ring-[#eb6873] text-[#39372f] resize-none"
         />

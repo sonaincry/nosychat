@@ -85,6 +85,15 @@ export default function App() {
     }
   };
 
+  const handleAvatarChanged = (avatarUrl: string | null) => {
+    setUser(current => {
+      if (!current) return current;
+      const updatedUser = { ...current, avatarUrl };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+  };
+
   // 🟢 Tránh render Router khi chưa kiểm tra xong trạng thái đăng nhập
   if (authLoading) {
     return (
@@ -139,7 +148,7 @@ export default function App() {
           path="/profile/:userId"
           element={
             <ProtectedRoute user={user}>
-              <Profile onLogout={handleLogout} />
+              <Profile onLogout={handleLogout} onAvatarChanged={handleAvatarChanged} />
             </ProtectedRoute>
           }
         />

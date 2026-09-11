@@ -9,11 +9,12 @@ import { useRef } from 'react';
 
 interface ProfileProps {
   onLogout?: () => void;
+  onAvatarChanged?: (avatarUrl: string | null) => void;
 }
 
 
 
-export default function Profile({ onLogout }: ProfileProps) {
+export default function Profile({ onLogout, onAvatarChanged }: ProfileProps) {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -46,8 +47,10 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     await axiosClient.post('/User/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    fetchProfile(); // reload to show new avatar
-  } catch (err) {
+    const updatedProfile = await getProfile(userId!);
+    setProfile(updatedProfile);
+    onAvatarChanged?.(updatedProfile.avatarUrl);
+  } catch {
     alert('Đổi ảnh đại diện thất bại!');
   } finally {
     setUploading(false);

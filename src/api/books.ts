@@ -1,6 +1,6 @@
 import axios from 'axios';
 import api, { API_BASE_URL } from './axiosClient';
-import type { Book, BookList, ReadingPosition, DocumentStructure, DocumentPage, ResumeSegment } from '../types/book';
+import type { Book, BookList, ReadingPosition, DocumentStructure, DocumentPage, ResumeSegment, BookSummaryStatus, BookSummaryResult } from '../types/book';
 
 export const booksApi = {
   list: async (search: string, page: number, signal?: AbortSignal) =>
@@ -30,6 +30,12 @@ export const booksApi = {
     (await api.get<DocumentPage>(`/books/${id}/structure/pages/${page}`, { signal })).data,
   resumeSegment: async (id: string, signal?: AbortSignal) =>
     (await api.get<ResumeSegment>(`/books/${id}/resume-segment`, { signal })).data,
+  summaryStatus: async (id: string, signal?: AbortSignal) =>
+    (await api.get<BookSummaryStatus>(`/books/${id}/summary/status`, { signal })).data,
+  startSummary: async (id: string) =>
+    (await api.post<BookSummaryStatus>(`/books/${id}/summary`)).data,
+  summary: async (id: string, signal?: AbortSignal) =>
+    (await api.get<BookSummaryResult>(`/books/${id}/summary`, { signal })).data,
 };
 
 export function bookError(error: unknown): string {

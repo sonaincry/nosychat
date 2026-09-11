@@ -7,6 +7,7 @@ import { HubConnection } from '@microsoft/signalr';
 import CreateGroupModal from './CreateGroupModal';
 import Avatar from './Avatar';
 import { useRef } from 'react';
+import { getProfile } from '../api/profile';
 
 interface Friend {
     userId: string;
@@ -44,6 +45,7 @@ interface GroupItem {
 
 export default function Sidebar({ user, hubConnection, onSelectGroup, onLogout, activeGroupId }: Props) {
     const [search, setSearch] = useState('');
+    const [currentAvatarUrl, setCurrentAvatarUrl] = useState(user.avatarUrl);
     const [friends, setFriends] = useState<Friend[]>([]);
     const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
     const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -51,6 +53,14 @@ export default function Sidebar({ user, hubConnection, onSelectGroup, onLogout, 
     const [groups, setGroups] = useState<GroupItem[]>([]);
     const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
     const visibleGroups = groups.filter((g) => g.isGroup || g.lastMessageAt !== null);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        void getProfile(user.userId, controller.signal)
+            .then(profile => setCurrentAvatarUrl(profile.avatarUrl))
+            .catch(() => { /* Keep the authenticated-user fallback when refresh fails. */ });
+        return () => controller.abort();
+    }, [user.userId, user.avatarUrl]);
     const fetchUserGroups = async () => {
         try {
             const res = await axiosClient.get('/Chat/my-groups');
@@ -182,7 +192,7 @@ export default function Sidebar({ user, hubConnection, onSelectGroup, onLogout, 
         <aside className="chat-sidebar">
             <div className="chat-sidebar-brand"><span className="chat-brand-icon"><MessageSquare size={22} /></span><strong>Nosy</strong><span className="chat-brand-caption">Góc trò chuyện</span></div>
             <button className="chat-profile" onClick={() => navigate(`/profile/${user.userId}`)}>
-                <Avatar url={user.avatarUrl} name={user.displayName || user.username} size={42} />
+                <Avatar url={user.avatarUrl ?? currentAvatarUrl} name={user.displayName || user.username} size={42} />
                 <span><strong>{user.displayName || user.username}</strong><small>@{user.username}</small></span>
                 <User size={18} />
             </button>
@@ -196,7 +206,7 @@ export default function Sidebar({ user, hubConnection, onSelectGroup, onLogout, 
                     {visibleGroups.filter(group => (group.name || 'Cuộc trò chuyện').toLocaleLowerCase().includes(search.toLocaleLowerCase())).map(group => (
                         <button key={group.id} onClick={() => handleOpenGroup(group.id)} className={`chat-contact ${activeGroupId === group.id ? 'is-active' : ''}`} aria-current={activeGroupId === group.id ? 'true' : undefined}>
                             <span className="chat-group-avatar">{group.name?.charAt(0) || <Users size={20} />}</span>
-                            <span className="chat-contact-copy"><strong>{group.name || 'Cuộc trò chuyện'}</strong><small>{group.lastMessageType === 'Image' ? 'Ảnh được chia sẻ' : group.lastMessageContent || 'Bắt đầu trò chuyện'}</small></span>
+                            <span className="chat-contact-copy"><strong>{group.name || 'Cuộc trò chuyện'}</strong><small>{group.lastMessageType === 'Image' ? 'Ảnh được chia sẻ' : group.lastMessageType === 'Gif' ? 'GIF được chia sẻ' : group.lastMessageType === 'Sticker' ? 'Sticker được gửi' : group.lastMessageContent || 'Bắt đầu trò chuyện'}</small></span>
                             {group.unreadCount > 0 && <span className="chat-unread">{group.unreadCount > 9 ? '9+' : group.unreadCount}</span>}
                         </button>
                     ))}

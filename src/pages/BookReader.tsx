@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, Headphones, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Headphones, Moon, Sun } from 'lucide-react';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -9,6 +9,7 @@ import type { Book, ReadingPosition } from '../types/book';
 import type { UserAuth } from '../types/chat';
 import PdfPage from '../components/books/PdfPage';
 import AudioReaderControls from '../components/books/AudioReaderControls';
+import BookSummaryDialog from '../components/books/BookSummaryDialog';
 import '../styles/books.css';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -40,6 +41,7 @@ function Reader({ user, bookId }: { user: UserAuth; bookId: string }) {
   const [error, setError] = useState('');
   const [saveState, setSaveState] = useState('');
   const [audioOpen, setAudioOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [revision, setRevision] = useState(0);
   const viewport = useRef<HTMLDivElement>(null);
   const saveQueue = useRef(Promise.resolve());
@@ -102,6 +104,7 @@ function Reader({ user, bookId }: { user: UserAuth; bookId: string }) {
     <header className="reader-header"><Link className="book-icon-button" to="/books" aria-label="Về thư viện"><ArrowLeft /></Link>
       <div className="reader-title"><h1>{book?.title || 'Góc đọc'}</h1><p>{book?.author || 'Một khoảng thời gian cho câu chuyện của bạn'}</p></div>
       <div className="reader-header-actions">
+        <button className="book-icon-button" onClick={() => setSummaryOpen(true)} disabled={!book} aria-label="Tóm tắt sách" title="Tóm tắt sách"><FileText /></button>
         <button className={`book-icon-button ${audioOpen ? 'active' : ''}`} onClick={() => setAudioOpen(value => !value)} disabled={!book || !pdf} aria-label="Đọc sách bằng giọng nói"><Headphones /></button>
         <button className="book-icon-button" onClick={() => { localStorage.setItem('book-reader-theme', dark ? 'light' : 'dark'); setDark(!dark); }} aria-label={dark ? 'Giao diện sáng' : 'Giao diện tối'}>{dark ? <Sun /> : <Moon />}</button>
       </div>
@@ -111,6 +114,7 @@ function Reader({ user, bookId }: { user: UserAuth; bookId: string }) {
         <PdfPage key={page} document={pdf} page={page} scale={1.5} onRendered={saveProgress} /> : <div className="reader-page-skeleton" aria-label="Đang chuẩn bị trang sách" />}
     </div>
     {audioOpen && book && pdf && <AudioReaderControls bookId={book.id} pageCount={pdf.numPages} visiblePage={page} onPageChange={goTo} onPositionChange={saveLogicalProgress} onClose={() => setAudioOpen(false)} />}
+    {summaryOpen && book && <BookSummaryDialog book={book} onClose={() => setSummaryOpen(false)} />}
     <footer className="reader-footer">
       <nav className="reader-page-navigation" aria-label="Lật trang sách">
         <button className="reader-turn-page" disabled={!pdf || page <= 1} onClick={() => goTo(page - 1)}><ChevronLeft size={20} /><span>Trang trước</span></button>

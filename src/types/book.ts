@@ -60,3 +60,16 @@ export interface ResumeSegment {
   position: ReadingPosition;
   segment: DocumentSegment | null;
 }
+
+export interface BookSummaryStatus {
+  status: 'Unavailable' | 'Pending' | 'Processing' | 'RateLimited' | 'Ready' | 'Failed';
+  totalChunks: number;
+  completedChunks: number;
+  errorMessage: string | null;
+  nextAttemptAt: string | null;
+}
+
+export interface BookSummaryResult {
+  content: string;
+  completedAt: string;
+}
