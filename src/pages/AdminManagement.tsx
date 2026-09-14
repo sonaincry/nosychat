@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { BookOpen, Gamepad2, Home, MessageSquare, Mic2, Pencil, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { BookOpen, Gamepad2, Home, MessageSquare, Mic2, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { adminApi } from '../api/admin';
 import { narrationApi } from '../api/narration';
 import { partiesApi, partyError } from '../api/parties';
-import type { AdminOverview } from '../types/admin';
+import type { AdminOverview, BookFolderSyncResult } from '../types/admin';
 import type { UserAuth } from '../types/chat';
 import type { NarratorVoice } from '../types/narration';
 import type { Game } from '../types/party';
@@ -23,6 +23,7 @@ export default function AdminManagement({ user }: { user: UserAuth }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [voiceError, setVoiceError] = useState('');
+  const [bookSync, setBookSync] = useState<BookFolderSyncResult | null>(null);
 
   const isAdmin = user.username.toLowerCase() === 'admin';
 
@@ -90,6 +91,13 @@ export default function AdminManagement({ user }: { user: UserAuth }) {
     finally { setBusy(false); }
   }
 
+  async function syncBooks() {
+    setBusy(true); setError('');
+    try { setBookSync(await adminApi.syncBooks()); }
+    catch (err) { setError(partyError(err)); }
+    finally { setBusy(false); }
+  }
+
   const clonedVoices = voices.filter(voice => voice.isCloned);
   return <div className="admin-shell"><div className="admin-window">
     <aside className="admin-rail"><Link className="admin-brand" to="/admin"><ShieldCheck /></Link><nav><Link className="active" to="/admin" title="Admin"><Home /></Link><Link to="/" title="Chat"><MessageSquare /></Link><Link to="/books" title="Sách"><BookOpen /></Link><Link to="/parties" title="Party"><Gamepad2 /></Link></nav></aside>
@@ -97,6 +105,12 @@ export default function AdminManagement({ user }: { user: UserAuth }) {
       <header className="admin-header"><div><p>ADMIN MANAGEMENT</p><h1>Quản trị Nosy</h1><span>Tổng quan tài khoản, giọng đọc và cấu hình Matching.</span></div><strong>@{user.username}</strong></header>
       {error && <div className="admin-error" role="alert">{error}</div>}
       <section className="admin-stats"><article><Users /><span>Người dùng</span><strong>{overview?.totalUsers ?? '—'}</strong></article><article><Gamepad2 /><span>Trò chơi</span><strong>{games.length}</strong></article><article><Mic2 /><span>Giọng nhân bản</span><strong>{clonedVoices.length}</strong></article></section>
+
+      <section className="admin-card"><div className="admin-section-heading"><div><p>BOOK STORAGE</p><h2>Đồng bộ thư viện sách</h2></div><button disabled={busy} onClick={() => void syncBooks()}><RefreshCw size={16} className={busy ? 'admin-spin' : undefined} /> Quét BooksRoot</button></div>
+        <p className="admin-book-help">Mỗi thư mục con cần đúng một PDF và tối đa một ảnh bìa JPG, JPEG, PNG hoặc WebP. Chỉ sách mới được nhập; sách đã mất khỏi ổ đĩa không bị xóa.</p>
+        {bookSync && <><div className="admin-book-totals"><span>Đã nhập <strong>{bookSync.imported}</strong></span><span>Đã cập nhật <strong>{bookSync.updated}</strong></span><span>Đã có <strong>{bookSync.existing}</strong></span><span>Bỏ qua <strong>{bookSync.skipped}</strong></span></div>
+          <div className="admin-book-results">{bookSync.items.map((item, index) => <article key={`${item.folderName}-${index}`} className={item.status.toLowerCase()}><div><strong>{item.folderName}</strong><span>{item.status}</span></div><p>{item.message}</p></article>)}</div></>}
+      </section>
 
       <section className="admin-card admin-games"><div className="admin-section-heading"><div><p>MATCHING</p><h2>Quản lý trò chơi</h2></div><button onClick={() => setGameForm(emptyGame)}><Plus size={16} /> Thêm mới</button></div>
         <form className="admin-game-form" onSubmit={event => void saveGame(event)}><label>Tên trò chơi<input required maxLength={100} value={gameForm.name} onChange={event => setGameForm({ ...gameForm, name: event.target.value })} /></label><fieldset><legend>Số người được phép</legend><div className="admin-size-picker">{Array.from({ length: 10 }, (_, index) => index + 1).map(size => <label key={size}><input type="checkbox" checked={gameForm.partySizes.includes(size)} onChange={() => setGameForm(current => ({ ...current, partySizes: current.partySizes.includes(size) ? current.partySizes.filter(value => value !== size) : [...current.partySizes, size].sort((a, b) => a - b) }))} /><span>{size}</span></label>)}</div></fieldset><label>Modes <small>Phân cách bằng dấu phẩy hoặc xuống dòng</small><textarea placeholder="Premier, Matchmaking, Faceit" value={gameForm.modes} onChange={event => setGameForm({ ...gameForm, modes: event.target.value })} /></label><div className="admin-form-actions">{gameForm.id && <button type="button" onClick={() => setGameForm(emptyGame)}>Hủy sửa</button>}<button className="admin-primary" disabled={busy || !gameForm.name.trim() || !gameForm.partySizes.length}>{gameForm.id ? 'Lưu thay đổi' : 'Tạo trò chơi'}</button></div></form>

@@ -60,7 +60,7 @@ export default function AddMemberModal({ groupId, friends, onClose, onMemberAdde
             alert('Thêm thành viên thành công!');
             onMemberAdded();
             onClose();
-        } catch (err) {
+        } catch {
             alert('Thêm thành viên thất bại!');
         } finally {
             setLoading(false);
@@ -68,8 +68,8 @@ export default function AddMemberModal({ groupId, friends, onClose, onMemberAdde
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-[#f7f4eb] border border-[#e1dccf] rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 motion-backdrop">
+            <div className="bg-[#f7f4eb] border border-[#e1dccf] rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 motion-panel">
                 <div className="flex justify-between items-center border-b border-[#e1dccf] pb-3">
                     <h3 className="text-lg font-bold text-[#39372f] flex items-center gap-2">
                         <UserPlus size={20} className="text-[#bb5660]" /> Thêm thành viên vào nhóm

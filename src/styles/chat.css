@@ -93,6 +93,48 @@
 .chat-send-button:hover { background: #c65360; }
 .chat-send-button:disabled { opacity: .4; cursor: not-allowed; }
 .chat-shell button:focus-visible, .chat-shell a:focus-visible { outline: 2px solid #d86b75; outline-offset: 3px; }
+.chat-profile:hover { border-color: #dccdbb; box-shadow: 0 6px 16px #634a3212; transform: translateY(-1px); }
+.chat-contact { transition: background .15s, border-color .15s, transform .15s, box-shadow .15s; }
+.chat-contact:hover { border-color: #e2d6c5; box-shadow: 0 4px 12px #60482f0c; transform: translateX(2px); }
+.chat-contact.is-active { box-shadow: inset 3px 0 #df6974; }
+.chat-tabs > *:hover { transform: translateY(-1px); }
+.chat-message-row { animation: motion-fade-in 150ms ease-out both; }
+.chat-message-media { transition: transform 180ms ease-out, filter 180ms ease-out; }
+.chat-message-media:hover { filter: brightness(1.02); transform: scale(1.015); }
+.chat-message-actions button:hover { transform: translateY(-1px); }
+.giphy-picker { animation: motion-popover-in 150ms ease-out both; transform-origin: bottom left; }
+.giphy-grid button:hover img { transform: scale(1.04); }
+.giphy-grid img { transition: transform 180ms ease-out; }
+.chat-header-actions { display: flex; align-items: center; gap: 8px; }
+.chat-shared-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; color: #766e62; border: 1px solid #e1d8ca; border-radius: 9px; font-size: 11px; font-weight: 650; }
+.chat-shared-button:hover { color: #b84651; background: #fffaf2; border-color: #d9c9b8; transform: translateY(-1px); }
+.shared-gallery-backdrop { position: fixed; z-index: 60; inset: 0; display: grid; place-items: center; padding: 20px; background: #2d292477; backdrop-filter: blur(3px); }
+.shared-gallery { width: min(760px, 100%); height: min(700px, calc(100dvh - 40px)); display: flex; flex-direction: column; overflow: hidden; color: #39372f; background: #f9f5eb; border: 1px solid #e2d8c9; border-radius: 19px; box-shadow: 0 26px 75px #382b2354; }
+.shared-gallery > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 22px 16px; }
+.shared-gallery > header p { color: #b84651; font-size: 9px; font-weight: 800; letter-spacing: .14em; }
+.shared-gallery > header h2 { max-width: 580px; margin-top: 3px; overflow: hidden; font-size: 18px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.shared-gallery > header button { display: grid; place-items: center; width: 38px; height: 38px; color: #81786b; border-radius: 50%; }
+.shared-gallery > header button:hover { background: #eee6d9; transform: rotate(4deg); }
+.shared-gallery-tabs { display: flex; gap: 5px; margin: 0 22px; padding: 4px; background: #eee7da; border-radius: 11px; }
+.shared-gallery-tabs button { position: relative; display: flex; flex: 1; align-items: center; justify-content: center; gap: 6px; padding: 9px; color: #7d7467; border-radius: 8px; font-size: 12px; font-weight: 650; }
+.shared-gallery-tabs button:hover { background: #f6f0e6; }
+.shared-gallery-tabs button.active { color: #b84651; background: #fffdf8; box-shadow: 0 2px 8px #5a443116; }
+.shared-gallery-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 22px 24px; }
+.shared-media-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.shared-media-grid a { position: relative; aspect-ratio: 1; overflow: hidden; background: #e8dfd1; border-radius: 9px; }
+.shared-media-grid img { width: 100%; height: 100%; object-fit: cover; transition: transform 190ms ease-out, filter 190ms ease-out; }
+.shared-media-grid span { position: absolute; right: 5px; bottom: 5px; padding: 3px 5px; color: white; background: #2e2923a8; border-radius: 5px; font-size: 9px; opacity: 0; transform: translateY(3px); transition: opacity 150ms, transform 150ms; }
+.shared-media-grid a:hover img { filter: brightness(.92); transform: scale(1.045); }
+.shared-media-grid a:hover span { opacity: 1; transform: none; }
+.shared-file-list, .shared-link-list { display: grid; gap: 8px; }
+.shared-file-list a, .shared-link-list a { display: flex; align-items: center; gap: 12px; padding: 12px; color: #655e54; background: #fffdf8; border: 1px solid #e7ded1; border-radius: 11px; }
+.shared-file-list a:hover, .shared-link-list a:hover { border-color: #d9c3b3; box-shadow: 0 6px 16px #5c463214; transform: translateY(-1px); }
+.shared-file-list a > span, .shared-link-list a > span { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }
+.shared-file-list strong, .shared-link-list strong { overflow: hidden; color: #3f3b34; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.shared-file-list small, .shared-link-list small, .shared-link-list time { overflow: hidden; color: #8a8072; font-size: 10px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.shared-link-list > a > svg:first-child { color: #c15a65; flex: 0 0 auto; }
+.shared-gallery-empty, .shared-gallery-error, .shared-gallery-loading { min-height: 220px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #897f72; text-align: center; font-size: 12px; }
+.shared-gallery-error { color: #ad4651; }.shared-gallery-more { display: block; margin: 18px auto 0; padding: 9px 16px; color: #b84651; background: #f6dfd8; border-radius: 9px; font-size: 12px; font-weight: 650; }.shared-gallery-more:hover { background: #efcfc7; transform: translateY(-1px); }
 @media (max-width: 760px) {
   .chat-shell { padding: 0; }
   .chat-window { border: 0; }
@@ -108,4 +150,12 @@
   .chat-giphy-button { min-width: 44px; min-height: 44px; }
   .giphy-picker { position: fixed; left: 10px; right: 10px; bottom: calc(76px + env(safe-area-inset-bottom)); width: auto; height: min(480px, 58dvh); }
   .chat-contact { padding: 14px 10px; }
+  .chat-shared-button span { display: none; }
+  .shared-gallery-backdrop { padding: 0; }
+  .shared-gallery { width: 100%; height: 100dvh; border: 0; border-radius: 0; }
+  .shared-gallery > header { padding: max(16px, env(safe-area-inset-top)) 16px 14px; }
+  .shared-gallery-tabs { margin: 0 16px; }
+  .shared-gallery-body { padding: 16px 14px max(22px, env(safe-area-inset-bottom)); }
+  .shared-media-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  .shared-media-grid span { opacity: 1; transform: none; }
 }

@@ -36,7 +36,8 @@
 .party-section-title { display: flex; justify-content: space-between; align-items: center; margin: 28px 0 15px; }
 .party-section-title h2 { margin-top: 5px; font-size: 18px; font-weight: 650; }
 .party-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-.party-card { display: flex; flex-direction: column; padding: 20px; background: #fffdf7; border: 1px solid #e5ddcf; border-radius: 17px; box-shadow: 0 8px 20px #69503c0c; }
+.party-card { display: flex; flex-direction: column; padding: 20px; background: #fffdf7; border: 1px solid #e5ddcf; border-radius: 17px; box-shadow: 0 8px 20px #69503c0c; transition: transform .18s ease-out, border-color .18s, box-shadow .18s; }
+.party-card:hover { border-color: #dbc9b7; box-shadow: 0 12px 27px #69503c16; transform: translateY(-2px); }
 .party-card-top { display: flex; align-items: center; justify-content: space-between; }
 .party-card-top > strong { color: #c1525c; font-size: 13px; }
 .party-state { padding: 5px 8px; color: #7a835a; background: #e7ead5; border-radius: 20px; font-size: 9px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
@@ -56,8 +57,8 @@
 .party-error { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 18px 0; padding: 12px 15px; color: #a0444d; background: #f8dfd9; border-radius: 10px; font-size: 12px; }.party-error button { text-decoration: underline; }
 .party-notifications { position: absolute; z-index: 12; top: 80px; right: 55px; width: min(360px, calc(100% - 40px)); max-height: 430px; padding: 16px; overflow-y: auto; background: #fffdf7; border: 1px solid #dfd5c5; border-radius: 15px; box-shadow: 0 18px 45px #5e46352d; }
 .party-notifications .party-section-title { margin: 0 0 9px; }.party-notifications > button { display: flex; width: 100%; flex-direction: column; gap: 5px; padding: 11px; text-align: left; border-radius: 9px; font-size: 11px; }.party-notifications > button.unread { background: #f9e3dc; }.party-notifications small { color: #9c8f7d; font-size: 9px; }
-.party-modal-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: #2f2a246d; backdrop-filter: blur(3px); }
-.party-modal { position: relative; width: min(560px, 100%); max-height: calc(100dvh - 40px); overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding: 28px; background: #f9f5eb; border: 1px solid #e4dac9; border-radius: 20px; box-shadow: 0 25px 70px #372c2460; }
+.party-modal-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: #2f2a246d; backdrop-filter: blur(3px); animation: motion-fade-in 150ms ease-out both; }
+.party-modal { position: relative; width: min(560px, 100%); max-height: calc(100dvh - 40px); overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding: 28px; background: #f9f5eb; border: 1px solid #e4dac9; border-radius: 20px; box-shadow: 0 25px 70px #372c2460; animation: motion-panel-in 180ms ease-out both; }
 .party-modal h2 { padding-right: 35px; font-size: 24px; font-weight: 650; }.party-modal h3 { margin-top: 8px; color: #776c5e; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
 .party-modal-close { position: absolute; top: 20px; right: 20px; color: #918576; }.party-modal-close svg { width: 19px; }
 .party-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }.party-form-row label { display: flex; flex-direction: column; gap: 7px; color: #8c8172; font-size: 10px; font-weight: 650; }

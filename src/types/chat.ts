@@ -25,3 +25,23 @@ export interface Reaction {
   userId: string;
   emoji: string;
 }
+
+export type SharedMediaType = 'Media' | 'Files' | 'Links';
+
+export interface SharedMediaItem {
+  messageId: string;
+  kind: SharedMediaType;
+  url: string;
+  fileName: string | null;
+  contentType: string | null;
+  sizeBytes: number | null;
+  context: string | null;
+  createdAt: string;
+}
+
+export interface SharedMediaPage {
+  items: SharedMediaItem[];
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}

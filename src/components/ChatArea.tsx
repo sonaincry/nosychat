@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
 import type { Message, UserAuth } from '../types/chat';
 import axiosClient, { API_BASE_URL } from '../api/axiosClient';
-import { Send, Image, CheckCheck, UserPlus, Trash2, SmilePlus, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Send, Image, Images, CheckCheck, UserPlus, Trash2, SmilePlus, ArrowLeft, MessageCircle } from 'lucide-react';
 import AddMemberModal from './AddMemberModal';
 import Avatar from './Avatar';
 import GiphyPicker from './GiphyPicker';
 import type { GiphyMediaItem, GiphyMediaType } from '../api/giphy';
+import SharedMediaGallery from './SharedMediaGallery';
 
 interface Friend {
   userId: string;
@@ -34,6 +35,7 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
   const [openPickerMsgId, setOpenPickerMsgId] = useState<string | null>(null);
   const [showGiphyPicker, setShowGiphyPicker] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showSharedMedia, setShowSharedMedia] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -152,10 +154,11 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
         connection.stop();
       }
     };
-  }, [groupId, user.token]);
+  }, [groupId, user.token, user.userId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+    messagesEndRef.current?.scrollIntoView({ behavior });
   }, [messages]);
 
   const handleSend = async (e: React.FormEvent) => {
@@ -248,6 +251,8 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
 
   const displayName = groupDetails?.name || initialGroupName || `Phòng Chat #${groupId.substring(0, 8)}...`;
   const isGroupChat = groupDetails?.isGroup ?? true;
+  const deletedMessageIds = useMemo(() => messages.filter(message => message.isDeleted)
+    .map(message => message.id), [messages]);
 
   function formatTimeVN(utcDateString: string): string {
     const date = new Date(utcDateString);
@@ -300,7 +305,7 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
           <div><h1>{displayName}</h1><p className="chat-connection-label">{hubConnection ? 'Sẵn sàng trò chuyện' : 'Đang kết nối…'}</p></div>
         </div>
 
-        {isGroupChat && (
+        <div className="chat-header-actions"><button type="button" className="chat-shared-button" onClick={() => setShowSharedMedia(true)} title="Nội dung đã chia sẻ"><Images size={16} /><span>Đã chia sẻ</span></button>{isGroupChat && (
           <button
             onClick={handleOpenAddMember}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-[#fce5dd] text-[#bc4653] hover:bg-[#eb6873] hover:text-[#39372f] rounded-lg text-xs font-semibold transition"
@@ -309,7 +314,7 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
             <UserPlus size={16} />
             <span>Thêm người</span>
           </button>
-        )}
+        )}</div>
       </div>
 
       {/* Danh sách tin nhắn */}
@@ -320,7 +325,7 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
           const isPickerOpen = openPickerMsgId === msg.id;
 
           return (
-            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
+            <div id={`message-${msg.id}`} key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group chat-message-row`}>
               <div className={`flex items-end gap-2 max-w-md ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                 {!isMe && <Avatar url={msg.senderAvatarUrl} name={msg.senderName} size={28} />}
 
@@ -337,9 +342,9 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
                       {msg.isDeleted ? (
                         <p className="italic text-[#827b6e] text-xs">Tin nhắn đã bị xoá</p>
                       ) : msg.messageType === 'Sticker' ? (
-                        <img src={msg.mediaUrl!} alt={msg.content || 'Sticker'} className="chat-sticker" loading="lazy" />
+                        <img src={msg.mediaUrl!} alt={msg.content || 'Sticker'} className="chat-sticker chat-message-media" loading="lazy" />
                       ) : msg.messageType === 'Image' || msg.messageType === 'Gif' ? (
-                        <img src={msg.mediaUrl!} alt={msg.content || (msg.messageType === 'Gif' ? 'GIF' : 'Attachment')} className="rounded-lg max-h-60 object-cover" loading="lazy" />
+                        <img src={msg.mediaUrl!} alt={msg.content || (msg.messageType === 'Gif' ? 'GIF' : 'Attachment')} className="rounded-lg max-h-60 object-cover chat-message-media" loading="lazy" />
                       ) : (
                         <p className="whitespace-pre-wrap break-words">{linkify(msg.content || '')}</p>
                       )}
@@ -376,7 +381,7 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
                     {isPickerOpen && (
                       <div
                         ref={pickerRef}
-                        className={`absolute -top-12 z-20 bg-white border border-[#e1dccf] rounded-full px-2 py-1.5 flex gap-1 shadow-xl ${
+                        className={`absolute -top-12 z-20 bg-white border border-[#e1dccf] rounded-full px-2 py-1.5 flex gap-1 shadow-xl motion-popover ${
                           isMe ? 'right-0' : 'left-0'
                         }`}
                       >
@@ -468,6 +473,7 @@ export default function ChatArea({ groupId, groupName: initialGroupName, user, o
           onMemberAdded={() => {}}
         />
       )}
+      {showSharedMedia && <SharedMediaGallery groupId={groupId} conversationName={displayName} deletedMessageIds={deletedMessageIds} onClose={() => setShowSharedMedia(false)} />}
     </div>
   );
 }
